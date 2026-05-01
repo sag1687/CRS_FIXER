@@ -1,0 +1,8 @@
+{
+  "type": "FeatureCollection",
+  "name": "corretto_wgs84",
+  "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::4326" } },
+  "features": [
+    { "type": "Feature", "properties": { "id": 1, "nome": "Roma" }, "geometry": { "type": "Point", "coordinates": [12.492, 41.890] } }
+  ]
+}

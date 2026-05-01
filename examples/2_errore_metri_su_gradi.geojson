@@ -1,0 +1,8 @@
+{
+  "type": "FeatureCollection",
+  "name": "metri_su_gradi",
+  "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::4326" } },
+  "features": [
+    { "type": "Feature", "properties": { "id": 1, "nome": "Punto Italia" }, "geometry": { "type": "Point", "coordinates": [1391500.0, 5142000.0] } }
+  ]
+}

@@ -1,0 +1,15 @@
+Changelog per Quick CRS Fixer
+
+Version 1.1:
+- Aggiunta ricerca manuale e avanzata ("Deep Scan OSM") per l'identificazione di Sistemi di Riferimento sconosciuti.
+- Integrazione delle API di OpenStreetMap (Nominatim) e Wikipedia per contestualizzare l'individuazione del CRS.
+- Aggiunto avviso per i file senza proiezione originale ("Nessuna Proiezione").
+- Ristrutturazione UI a due schede: "Problemi Rilevati" e "Riassegna EPSG" per gestire il flusso Assegna -> Riproietta.
+- Aggiunto salvataggio automatico del risultato corretto in formato GeoPackage (.gpkg).
+- Inserita scheda Info con licenze OSM (ODbL) e Wikipedia (CC BY-SA), indicando l'uso non a fini di lucro dell'applicativo.
+- Bugfix: Risolto "C/C++ object deleted" dopo l'assegnazione.
+- Pulizia e ottimizzazione del codice secondo standard PEP8 (flake8).
+
+Version 1.0:
+- Prima release con funzioni base di detection e correzione in memoria (Assign/Reproject).
+- Riconoscimento automatico delle principali proiezioni italiane (UTM 32N/33N, Gauss-Boaga).

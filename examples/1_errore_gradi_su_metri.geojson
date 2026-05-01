@@ -1,0 +1,8 @@
+{
+  "type": "FeatureCollection",
+  "name": "gradi_su_metri",
+  "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::3857" } },
+  "features": [
+    { "type": "Feature", "properties": { "id": 1, "nome": "Colosseo" }, "geometry": { "type": "Point", "coordinates": [12.492, 41.890] } }
+  ]
+}
