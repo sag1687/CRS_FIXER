@@ -1,29 +1,91 @@
-import urllib.request
-import urllib.parse
 import json
 import math
-from qgis.core import QgsCoordinateReferenceSystem, QgsPointXY, QgsCoordinateTransform, QgsProject
+import urllib.parse
+import urllib.request
+
+from qgis.core import (
+    Qgis,
+    QgsCoordinateReferenceSystem,
+    QgsCoordinateTransform,
+    QgsMessageLog,
+    QgsPointXY,
+    QgsProject,
+)
+
+from ..i18n import normalize_language, text
+
+LOG_TAG = "Quick CRS Fixer"
+NETWORK_TIMEOUT_SECONDS = 10
+USER_AGENT = "QGIS-QuickCRSFixer-Plugin/2.0"
 
 
 class SmartSuggest:
     def __init__(self, iface):
         self.iface = iface
+        self.language = "it"
         # Database semplificato di EPSG comuni e i loro bounding box (WGS84)
         # Formato: 'EPSG': (xmin, ymin, xmax, ymax, "Nome", "Perché")
         self.crs_db = {
-            'EPSG:3003': (6.62, 36.4, 13.14, 47.05, "Monte Mario / Italy zone 1", "Standard per la cartografia tecnica in Italia Ovest."),
-            'EPSG:3004': (12.45, 36.4, 18.48, 47.05, "Monte Mario / Italy zone 2", "Standard per la cartografia tecnica in Italia Est."),
-            'EPSG:32632': (6.0, 0.0, 12.0, 84.0, "WGS 84 / UTM zone 32N", "Sistema globale preciso, molto usato in Europa centrale e Italia."),
-            'EPSG:32633': (12.0, 0.0, 18.0, 84.0, "WGS 84 / UTM zone 33N", "UTM zona 33N, usato in Italia meridionale, Adriatico e Sud (es. Calabria/Puglia)."),
-            'EPSG:3857': (-180, -85, 180, 85, "Web Mercator", "Usato da Google Maps/OSM. Le tue coordinate sembrano pronte per il web."),
-            'EPSG:4326': (-180, -90, 180, 90, "WGS 84 (Gradi)", "Coordinate geografiche standard. Ideale per GPS e dati globali.")
+            "EPSG:3003": (
+                6.62,
+                36.4,
+                13.14,
+                47.05,
+                "Monte Mario / Italy zone 1",
+                "Standard per la cartografia tecnica in Italia Ovest.",
+            ),
+            "EPSG:3004": (
+                12.45,
+                36.4,
+                18.48,
+                47.05,
+                "Monte Mario / Italy zone 2",
+                "Standard per la cartografia tecnica in Italia Est.",
+            ),
+            "EPSG:32632": (
+                6.0,
+                0.0,
+                12.0,
+                84.0,
+                "WGS 84 / UTM zone 32N",
+                "Sistema globale preciso, molto usato in Europa centrale e Italia.",
+            ),
+            "EPSG:32633": (
+                12.0,
+                0.0,
+                18.0,
+                84.0,
+                "WGS 84 / UTM zone 33N",
+                "UTM zona 33N, usato in Italia meridionale, Adriatico e Sud (es. Calabria/Puglia).",
+            ),
+            "EPSG:3857": (
+                -180,
+                -85,
+                180,
+                85,
+                "Web Mercator",
+                "Usato da Google Maps/OSM. Le tue coordinate sembrano pronte per il web.",
+            ),
+            "EPSG:4326": (
+                -180,
+                -90,
+                180,
+                90,
+                "WGS 84 (Gradi)",
+                "Coordinate geografiche standard. Ideale per GPS e dati globali.",
+            ),
         }
+
+    def set_language(self, language):
+        self.language = normalize_language(language)
+
+    def tr(self, key, **kwargs):
+        return text(key, self.language, **kwargs)
 
     def deep_scan(self, layer, manual_query=""):
         """
-        Esegue una ricerca su Nominatim OSM usando i campi testuali del layer (o la query manuale),
-        interroga Wikipedia e testa matematicamente le coordinate contro oltre 120 EPSG mondiali,
-        restituendo i candidati migliori.
+        Esegue una ricerca su Nominatim OSM, interroga Wikipedia e testa le
+        coordinate contro oltre 120 EPSG mondiali.
         """
         query_name = None
 
@@ -31,23 +93,24 @@ class SmartSuggest:
             query_name = manual_query.strip()
         else:
             target_fields = [
-                'town',
-                'città',
-                'citta',
-                'county',
-                'comune',
-                'provincia',
-                'name',
-                'nome',
-                'city',
-                'location',
-                'localita',
-                'frazione',
-                'toponimo',
-                'village',
-                'municipality',
-                'region',
-                'state']
+                "town",
+                "città",
+                "citta",
+                "county",
+                "comune",
+                "provincia",
+                "name",
+                "nome",
+                "city",
+                "location",
+                "localita",
+                "frazione",
+                "toponimo",
+                "village",
+                "municipality",
+                "region",
+                "state",
+            ]
             field_idx = -1
 
             for field in layer.fields():
@@ -66,46 +129,64 @@ class SmartSuggest:
             return None
 
         try:
-            url = f"https://nominatim.openstreetmap.org/search?q={
-                urllib.parse.quote(query_name)}&format=json&limit=1"
+            encoded_query = urllib.parse.quote(query_name)
+            url = (
+                "https://nominatim.openstreetmap.org/search"
+                f"?q={encoded_query}&format=json&limit=1"
+            )
+
+            # Security check for Bandit B310: ensure only http/https schemes
+            parsed_url = urllib.parse.urlparse(url)
+            if parsed_url.scheme not in ("http", "https"):
+                raise ValueError(f"URL scheme {parsed_url.scheme} is not allowed")
+
             req = urllib.request.Request(
-                url, headers={
-                    'User-Agent': 'QGIS-QuickCRSFixer-Plugin'})
-            with urllib.request.urlopen(req) as response:
-                data = json.loads(response.read().decode('utf-8'))
+                url,
+                headers={"User-Agent": USER_AGENT},
+            )
+            with urllib.request.urlopen(req, timeout=NETWORK_TIMEOUT_SECONDS) as response:  # nosec B310
+                data = json.loads(response.read().decode("utf-8"))
                 if not data:
                     return None
-                lon = float(data[0]['lon'])
-                lat = float(data[0]['lat'])
+                lon = float(data[0]["lon"])
+                lat = float(data[0]["lat"])
         except Exception as e:
-            print(f"Errore OSM: {e}")
+            QgsMessageLog.logMessage(self.tr("suggest.log_osm", error=e), LOG_TAG, Qgis.Warning)
             return None
 
         # Ricerca Wikipedia
         wiki_desc = ""
         try:
-            wiki_url = f"https://it.wikipedia.org/w/api.php?action=query&prop=extracts&exintro&explaintext&titles={
-                urllib.parse.quote(query_name)}&format=json"
+            wiki_language = "en" if self.language == "en" else "it"
+            wiki_url = (
+                f"https://{wiki_language}.wikipedia.org/w/api.php"
+                "?action=query&prop=extracts&exintro&explaintext"
+                f"&titles={encoded_query}&format=json"
+            )
+
+            # Security check for Bandit B310: ensure only http/https schemes
+            parsed_wiki_url = urllib.parse.urlparse(wiki_url)
+            if parsed_wiki_url.scheme not in ("http", "https"):
+                raise ValueError(f"URL scheme {parsed_wiki_url.scheme} is not allowed")
+
             wiki_req = urllib.request.Request(
-                wiki_url, headers={
-                    'User-Agent': 'QGIS-QuickCRSFixer-Plugin'})
-            with urllib.request.urlopen(wiki_req) as wiki_response:
-                wiki_data = json.loads(wiki_response.read().decode('utf-8'))
-                pages = wiki_data.get('query', {}).get('pages', {})
+                wiki_url,
+                headers={"User-Agent": USER_AGENT},
+            )
+            with urllib.request.urlopen(wiki_req, timeout=NETWORK_TIMEOUT_SECONDS) as wiki_response:  # nosec B310
+                wiki_data = json.loads(wiki_response.read().decode("utf-8"))
+                pages = wiki_data.get("query", {}).get("pages", {})
                 for page_id, page_info in pages.items():
-                    if 'extract' in page_info and page_info['extract']:
-                        wiki_desc = page_info['extract'][:200] + "..."
+                    if "extract" in page_info and page_info["extract"]:
+                        wiki_desc = page_info["extract"][:200] + "..."
                         break
         except Exception as e:
-            print(f"Errore Wikipedia: {e}")
+            QgsMessageLog.logMessage(self.tr("suggest.log_wikipedia", error=e), LOG_TAG, Qgis.Warning)
 
         point_wgs84 = QgsPointXY(lon, lat)
         src_crs = QgsCoordinateReferenceSystem("EPSG:4326")
 
-        # Aggiungiamo anche EPSG catastali generici se necessario, ma i fusi
-        # principali sono questi.
-        epsg_candidates = [3857, 3003, 3004] + \
-            list(range(32601, 32661)) + list(range(32701, 32761))
+        epsg_candidates = [3857, 3003, 3004] + list(range(32601, 32661)) + list(range(32701, 32761))
         layer_center = layer.extent().center()
 
         valid_epsgs = []
@@ -117,54 +198,63 @@ class SmartSuggest:
                 continue
 
             try:
-                transform = QgsCoordinateTransform(
-                    src_crs, dest_crs, QgsProject.instance())
+                transform = QgsCoordinateTransform(src_crs, dest_crs, QgsProject.instance())
                 proj_point = transform.transform(point_wgs84)
 
                 # Calcola la distanza tra il punto calcolato da OSM e il centro
                 # del layer
-                dist = math.sqrt((proj_point.x() - layer_center.x())
-                                 ** 2 + (proj_point.y() - layer_center.y())**2)
+                dx = proj_point.x() - layer_center.x()
+                dy = proj_point.y() - layer_center.y()
+                dist = math.sqrt(dx**2 + dy**2)
 
                 valid_epsgs.append(
-                    {'epsg': epsg, 'dist': dist, 'name': dest_crs.description()})
-            except BaseException:
+                    {
+                        "epsg": epsg,
+                        "dist": dist,
+                        "name": dest_crs.description(),
+                    }
+                )
+            except Exception:
                 continue
 
         if valid_epsgs:
-            valid_epsgs.sort(key=lambda x: x['dist'])
+            valid_epsgs.sort(key=lambda x: x["dist"])
             options = []
             for i, v in enumerate(valid_epsgs[:5]):  # Prendi i migliori 5
-                match_pct = 100 if i == 0 else max(
-                    10, int(100 - (v['dist'] / 2000)))
+                match_pct = 100 if i == 0 else max(10, int(100 - (v["dist"] / 2000)))
+                dist_km = int(v["dist"] / 1000)
 
-                options.append({
-                    'id': f"EPSG:{v['epsg']}",
-                    'name': f"Match {match_pct}% - EPSG:{v['epsg']} ({v['name']})",
-                    'reason': f"Distanza: {int(v['dist'] / 1000)}km dal centro teorico."
-                })
+                options.append(
+                    {
+                        "id": f"EPSG:{v['epsg']}",
+                        "name": f"Match {match_pct}% - EPSG:{v['epsg']} ({v['name']})",
+                        "reason": self.tr("suggest.deep_distance", dist_km=dist_km),
+                    }
+                )
 
-            wiki_text = f"<br><br><b style='color:#2D89EF'>Info Wikipedia:</b> <i>{wiki_desc}</i>" if wiki_desc else ""
+            wiki_text = self.tr("suggest.wikipedia_info", desc=wiki_desc) if wiki_desc else ""
             alert_msg = ""
+
+            cond1 = "UTM zone 32N" in options[0]["name"] and "Calabria" in query_name.title()
+            cond2 = valid_epsgs[0]["dist"] > 20000
 
             # Controllo se è un file probabilmente disegnato nel fuso sbagliato
             if not is_crs_valid:
-                alert_msg = f"<br><br><b style='color:#ff8c00;'>ATTENZIONE:</b> Il file non possiede alcun Sistema di Riferimento nativo (es. manca il file .prj). La ricerca ha determinato matematicamente che l'<b>EPSG:{
-                    valid_epsgs[0]['epsg']}</b> è il più probabile (distanza dal centro teorico {
-                    int(
-                        valid_epsgs[0]['dist'] /
-                        1000)}km). Applicalo usando il tasto 'Assign' in basso."
-            elif "UTM zone 32N" in options[0]['name'] and "Calabria" in query_name.title() or valid_epsgs[0]['dist'] > 20000:
-                alert_msg = f"<br><br><b style='color:#ff8c00;'>ATTENZIONE:</b> Il sistema di riferimento potrebbe non coincidere con la reale posizione geografica (distanza dal centro {
-                    int(
-                        valid_epsgs[0]['dist'] /
-                        1000)}km). Il file potrebbe essere stato esportato in un fuso diverso dal suo originale. Assegna l'EPSG calcolato e poi riproietta tramite gli strumenti di QGIS (o dal menu a tendina)."
+                epsg_val = valid_epsgs[0]["epsg"]
+                dist_km = int(valid_epsgs[0]["dist"] / 1000)
+                alert_msg = self.tr("suggest.deep_alert_no_crs", epsg=epsg_val, dist_km=dist_km)
+            elif cond1 or cond2:
+                dist_km = int(valid_epsgs[0]["dist"] / 1000)
+                alert_msg = self.tr("suggest.deep_alert_mismatch", dist_km=dist_km)
 
+            best_epsg = valid_epsgs[0]["epsg"]
+            reason = self.tr("suggest.deep_reason", query=query_name, epsg=best_epsg)
             return {
-                'id': options[0]['id'],
-                'name': options[0]['name'],
-                'reason': f"Ricerca per <b>{query_name}</b> completata! Ti suggerisco l'uso di <b>EPSG:{valid_epsgs[0]['epsg']}</b>.{wiki_text}{alert_msg}",
-                'options': options}
+                "id": options[0]["id"],
+                "name": options[0]["name"],
+                "reason": f"{reason}{wiki_text}{alert_msg}",
+                "options": options,
+            }
 
         return None
 
@@ -178,68 +268,75 @@ class SmartSuggest:
         # 1. Check se sono Gradi (WGS84)
         if abs(extent.xMaximum()) <= 180 and abs(extent.yMaximum()) <= 90:
             return {
-                'id': 'EPSG:4326',
-                'name': "WGS 84 (Gradi)",
-                'reason': "Le coordinate sono piccole (gradi), tipiche del WGS84."}
+                "id": "EPSG:4326",
+                "name": self.tr("suggest.wgs84_degrees.name"),
+                "reason": self.tr("suggest.wgs84_degrees.reason"),
+            }
 
         x = center.x()
         y = center.y()
 
-        # Le coordinate in UTM per l'Italia (sia 32N che 33N) hanno X tipicamente tra 300.000 e 800.000
-        # e Y (Northing) tra 4.000.000 (Sud Italia) e 5.300.000 (Nord Italia).
+        # Le coordinate in UTM per l'Italia (sia 32N che 33N) hanno X
+        # tipicamente tra 300.000 e 800.000 e Y (Northing) tra 4.000.000
+        # (Sud Italia) e 5.300.000 (Nord Italia).
         if 300000 < x < 800000 and 4000000 < y < 5300000:
             # Siamo in UTM. Come decidiamo tra 32 e 33?
             # In UTM, la Falsa Origine (X=500.000) è il meridiano centrale.
-            # E' difficile distinguere 32 da 33 solo dai metri "grezzi" se non sappiamo a quale parallelo corrispondono,
-            # ma statisticamente, se un utente lavora in Calabria e ha coordinate UTM senza "False Northing/Easting" strane:
+            # E' difficile distinguere 32 da 33 solo dai metri "grezzi" se
+            # non sappiamo a quale parallelo corrispondono, ma statisticamente
+            # Calabria e Sud/Est Italia usano spesso UTM 33N.
             # Per una stima rozza (se consideriamo coordinate standard senza
             # falso est specificato in fase di rilievo):
 
-            # Tuttavia, a livello pratico per il Sud/Est Italia si usa molto la 33N.
-            # Cerchiamo di dedurlo dall'estensione se possibile, altrimenti diamo un default sensato.
+            # Cerchiamo di dedurlo dall'estensione se possibile, altrimenti
+            # diamo un default sensato.
             # Se siamo molto a sud (Y bassa), per la Calabria/Puglia è più
             # probabile 33N.
             if y < 4500000:  # Circa a sud di Roma
                 return {
-                    'id': 'EPSG:32633',
-                    'name': "WGS 84 / UTM zone 33N",
-                    'reason': "Coordinate UTM in area compatibile con Sud Italia/Adriatico (es. Calabria/Puglia)."
+                    "id": "EPSG:32633",
+                    "name": "WGS 84 / UTM zone 33N",
+                    "reason": self.tr("suggest.wgs84_utm33.reason"),
                 }
             else:
                 return {
-                    'id': 'EPSG:32632',
-                    'name': "WGS 84 / UTM zone 32N",
-                    'reason': "Coordinate UTM in area compatibile con Nord/Centro Italia."}
+                    "id": "EPSG:32632",
+                    "name": "WGS 84 / UTM zone 32N",
+                    "reason": self.tr("suggest.wgs84_utm32.reason"),
+                }
 
         # Esempio Italia Gauss-Boaga (Fuso Ovest - 3003 e Fuso Est - 3004)
         # Ovest: X ha un falso Est di 1.500.000 -> X varia tra ~1.300.000 e
         # 1.800.000
         if 1300000 < x < 1800000 and 4000000 < y < 5300000:
             return {
-                'id': 'EPSG:3003',
-                'name': "Monte Mario / Italy zone 1 (Ovest)",
-                'reason': "I numeri e il 'Falso Est' di 1.5M indicano Gauss-Boaga Ovest."}
+                "id": "EPSG:3003",
+                "name": self.tr("suggest.gauss_boaga_west.name"),
+                "reason": self.tr("suggest.gauss_boaga_west.reason"),
+            }
 
         # Est: X ha un falso Est di 2.520.000 -> X varia tra ~2.300.000 e
         # 2.800.000
         if 2300000 < x < 2800000 and 4000000 < y < 5300000:
             return {
-                'id': 'EPSG:3004',
-                'name': "Monte Mario / Italy zone 2 (Est)",
-                'reason': "I numeri e il 'Falso Est' di 2.52M indicano Gauss-Boaga Est."}
+                "id": "EPSG:3004",
+                "name": self.tr("suggest.gauss_boaga_east.name"),
+                "reason": self.tr("suggest.gauss_boaga_east.reason"),
+            }
 
         # Coordinate Web Mercator (EPSG:3857) per l'Italia sono circa:
         # X: 700.000 - 2.100.000, ma la Y è molto più alta: 4.300.000 -
         # 5.900.000
         if y > 5300000 or (x < 1300000 and y > 4000000):
             return {
-                'id': 'EPSG:3857',
-                'name': "Web Mercator",
-                'reason': "Le coordinate (specialmente la Y alta) suggeriscono Web Mercator."}
+                "id": "EPSG:3857",
+                "name": "Web Mercator",
+                "reason": self.tr("suggest.web_mercator.reason"),
+            }
 
         # Default fallback
         return {
-            'id': 'EPSG:3857',
-            'name': "Web Mercator (Default)",
-            'reason': "Valori in metri non riconosciuti in zone UTM/Gauss-Boaga note, ipotizzo Web Mercator."
+            "id": "EPSG:3857",
+            "name": self.tr("suggest.web_mercator.default_name"),
+            "reason": self.tr("suggest.web_mercator_default.reason"),
         }

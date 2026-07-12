@@ -1,15 +1,84 @@
-Changelog per Quick CRS Fixer
+Changelog per Quick CRS Fixer / Quick CRS Fixer changelog
+
+Version 2.0:
+[IT]
+- Nuovo tema scuro "slate blue" condiviso della famiglia di plugin SinoCloud (lo stesso di SARIAG e STAC Browser).
+- Selettore lingua con bandiere (Italiano / English).
+- Nuovo menu a tendina nella scheda Info con gli altri plugin dell'autore, descrizione bilingue e link GitHub.
+- Homepage aggiornata a sinocloud.it; User-Agent e testo Info aggiornati alla versione 2.0.
+- README bilingue aggiornato con screenshot e nuova sezione plugin.
+- Codice ricontrollato con flake8 e compilazione Qt6 (QGIS 4) verificata, con retrocompatibilita' Qt5 (QGIS 3).
+
+[EN]
+- New "slate blue" dark theme shared by the SinoCloud plugin family (same as SARIAG and STAC Browser).
+- Language selector with flags (Italiano / English).
+- New drop-down in the Info tab with the author's other plugins, bilingual description and GitHub links.
+- Homepage updated to sinocloud.it; User-Agent and Info text updated to version 2.0.
+- Bilingual README updated with screenshots and the new plugins section.
+- Code re-checked with flake8 and Qt6 (QGIS 4) compilation verified, keeping Qt5 (QGIS 3) backwards compatibility.
+
+Version 1.9:
+[IT]
+- Aggiunto selettore lingua nel dock per passare da italiano a inglese.
+- Tradotte in italiano e inglese schede, pulsanti, messaggi QGIS, Help, problemi rilevati e suggerimenti CRS.
+- Propagata la lingua scelta a detector, suggeritore Deep Scan e fixer.
+- Aggiornato il README in doppia lingua con tutti i workflow operativi.
+- Aggiornato questo changelog in doppia lingua con le modifiche effettuate.
+- Aggiornati metadata, testo Info e User-Agent alla versione 1.9.
+- Ricontrollato il codice con flake8 completo.
+
+[EN]
+- Added a language selector in the dock to switch between Italian and English.
+- Translated tabs, buttons, QGIS messages, Help, detected issues and CRS suggestions into Italian and English.
+- Propagated the selected language to the detector, Deep Scan suggestion engine and fixer.
+- Updated the README in both languages with all operational workflows.
+- Updated this changelog in both languages with the completed changes.
+- Updated metadata, Info text and User-Agent to version 1.9.
+- Rechecked the code with full flake8 validation.
+
+Version 1.8:
+[IT]
+- Aggiunta compatibilita' operativa con QGIS 4.0 e Qt6 tramite shim unico per enum Qt/PyQt6.
+- Aggiunta scheda Help nel dock con workflow Assign, Reproject, Deep Scan OSM, Fix All e Riassegna EPSG.
+- Pulizia codice con flake8 a 120 colonne e controllo mirato W503/W504/E203/E126.
+- Rimosso il payload di test dal decoder e corretto il warning di deprecazione Shapely.
+- Sostituiti print e BaseException nei moduli logici con logging QGIS e gestione eccezioni piu' mirata.
+- Aggiunti timeout alle chiamate Nominatim/Wikipedia.
+
+[EN]
+- Added operational QGIS 4.0 and Qt6 compatibility through a single Qt/PyQt6 enum shim.
+- Added the Help tab with Assign, Reproject, Deep Scan OSM, Fix All and Reassign EPSG workflows.
+- Cleaned the code with flake8 at 120 columns and targeted W503/W504/E203/E126 checks.
+- Removed the decoder test payload and fixed the Shapely deprecation warning.
+- Replaced print and BaseException in logic modules with QGIS logging and more targeted exception handling.
+- Added timeouts to Nominatim/Wikipedia requests.
 
 Version 1.1:
-- Aggiunta ricerca manuale e avanzata ("Deep Scan OSM") per l'identificazione di Sistemi di Riferimento sconosciuti.
-- Integrazione delle API di OpenStreetMap (Nominatim) e Wikipedia per contestualizzare l'individuazione del CRS.
+[IT]
+- Aggiunta ricerca manuale e avanzata ("Deep Scan OSM") per identificare sistemi di riferimento sconosciuti.
+- Integrate le API di OpenStreetMap (Nominatim) e Wikipedia per contestualizzare l'individuazione del CRS.
 - Aggiunto avviso per i file senza proiezione originale ("Nessuna Proiezione").
-- Ristrutturazione UI a due schede: "Problemi Rilevati" e "Riassegna EPSG" per gestire il flusso Assegna -> Riproietta.
+- Ristrutturata UI a due schede: "Problemi Rilevati" e "Riassegna EPSG" per gestire Assegna -> Riproietta.
 - Aggiunto salvataggio automatico del risultato corretto in formato GeoPackage (.gpkg).
-- Inserita scheda Info con licenze OSM (ODbL) e Wikipedia (CC BY-SA), indicando l'uso non a fini di lucro dell'applicativo.
-- Bugfix: Risolto "C/C++ object deleted" dopo l'assegnazione.
-- Pulizia e ottimizzazione del codice secondo standard PEP8 (flake8).
+- Inserita scheda Info con licenze OSM (ODbL) e Wikipedia (CC BY-SA).
+- Bugfix: risolto "C/C++ object deleted" dopo l'assegnazione.
+- Pulizia e ottimizzazione del codice secondo standard PEP8/flake8.
+
+[EN]
+- Added manual and advanced search ("Deep Scan OSM") to identify unknown reference systems.
+- Integrated OpenStreetMap (Nominatim) and Wikipedia APIs to contextualize CRS detection.
+- Added a warning for files without an original projection ("No Projection").
+- Reworked the UI into two tabs: "Detected Issues" and "Reassign EPSG" for Assign -> Reproject workflows.
+- Added automatic saving of fixed results as GeoPackage (.gpkg).
+- Added an Info tab with OSM (ODbL) and Wikipedia (CC BY-SA) licenses.
+- Bugfix: resolved "C/C++ object deleted" after assignment.
+- Cleaned and optimized the code according to PEP8/flake8 standards.
 
 Version 1.0:
+[IT]
 - Prima release con funzioni base di detection e correzione in memoria (Assign/Reproject).
 - Riconoscimento automatico delle principali proiezioni italiane (UTM 32N/33N, Gauss-Boaga).
+
+[EN]
+- First release with basic detection and in-memory correction features (Assign/Reproject).
+- Automatic recognition of the main Italian projections (UTM 32N/33N, Gauss-Boaga).
