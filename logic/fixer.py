@@ -1,4 +1,10 @@
-from qgis.core import Qgis, QgsCoordinateReferenceSystem, QgsMessageLog, QgsProject, QgsVectorLayer
+from qgis.core import (
+    Qgis,
+    QgsCoordinateReferenceSystem,
+    QgsMessageLog,
+    QgsProject,
+    QgsVectorLayer,
+)
 
 from ..i18n import normalize_language, text
 
@@ -30,7 +36,11 @@ class OneClickFixer:
                 result = processing.run("native:assignprojection", params)
                 if "OUTPUT" in result:
                     safe_auth_id = crs_auth_id.replace(":", "_")
-                    out_layer = QgsVectorLayer(result["OUTPUT"], f"{layer.name()}_{safe_auth_id}", "ogr")
+                    out_layer = QgsVectorLayer(
+                        result["OUTPUT"],
+                        f"{layer.name()}_{safe_auth_id}",
+                        "ogr",
+                    )
                     if out_layer.isValid():
                         QgsProject.instance().addMapLayer(out_layer)
                         QgsProject.instance().removeMapLayer(layer.id())
@@ -64,10 +74,15 @@ class OneClickFixer:
             if "OUTPUT" in result:
                 if output_path:
                     safe_target_id = target_crs_auth_id.replace(":", "_")
-                    output_layer = QgsVectorLayer(result["OUTPUT"], f"{layer.name()}_{safe_target_id}", "ogr")
+                    output_layer = QgsVectorLayer(
+                        result["OUTPUT"],
+                        f"{layer.name()}_{safe_target_id}",
+                        "ogr",
+                    )
                 else:
                     output_layer = result["OUTPUT"]
-                    output_layer.setName(f"{layer.name()}_{target_crs_auth_id.replace(':', '_')}")
+                    suffix = target_crs_auth_id.replace(":", "_")
+                    output_layer.setName(f"{layer.name()}_{suffix}")
 
                 if output_layer and output_layer.isValid():
                     QgsProject.instance().addMapLayer(output_layer)

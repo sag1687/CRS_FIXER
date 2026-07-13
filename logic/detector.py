@@ -43,7 +43,9 @@ class CRSDetector:
                 results["severity"] = "error"
         else:
             if abs(extent.xMaximum()) < 190 and abs(extent.yMaximum()) < 190:
-                results["issues"].append(self.tr("detector.degree_in_projected"))
+                results["issues"].append(
+                    self.tr("detector.degree_in_projected")
+                )
                 results["severity"] = "error"
 
         # Check 3: coerenza con il CRS del progetto.

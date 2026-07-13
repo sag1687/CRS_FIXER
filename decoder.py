@@ -68,14 +68,19 @@ def attempt_decode_geometry(payload: str) -> Optional[BaseGeometry]:
     except (binascii.Error, ShapelyError, Exception) as e:
         logger.debug(f"Fallito parsing Base64 WKB: {e}")
 
-    logger.error("Impossibile decodificare il payload con i formati standard conosciuti.")
+    logger.error(
+        "Impossibile decodificare il payload con i formati standard "
+        "conosciuti."
+    )
     return None
 
 
-def process_unknown_payload(payload: str, output_file: str = "output_debug.gpkg") -> None:
+def process_unknown_payload(
+    payload: str, output_file: str = "output_debug.gpkg"
+) -> None:
     """
-    Processa il payload e, in caso di successo, salva il risultato in un GeoPackage
-    pronto per l'ingestion in QGIS.
+    Processa il payload e, in caso di successo, salva il risultato in un
+    GeoPackage pronto per l'ingestion in QGIS.
     """
     geom = attempt_decode_geometry(payload)
 
@@ -88,8 +93,12 @@ def process_unknown_payload(payload: str, output_file: str = "output_debug.gpkg"
         try:
             # Salvataggio ottimizzato per QGIS
             gdf.to_file(output_file, driver="GPKG")
-            logger.info(f"Dato vettoriale esportato con successo in: {output_file}")
+            logger.info(
+                f"Dato vettoriale esportato con successo in: {output_file}"
+            )
         except Exception as e:
             logger.error(f"Errore durante l'esportazione del GeoPackage: {e}")
     else:
-        logger.warning("Nessuna geometria esportabile. Verificare l'encoding originario.")
+        logger.warning(
+            "Nessuna geometria esportabile. Verificare l'encoding originario."
+        )

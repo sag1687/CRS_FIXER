@@ -48,7 +48,8 @@ class SmartSuggest:
                 12.0,
                 84.0,
                 "WGS 84 / UTM zone 32N",
-                "Sistema globale preciso, molto usato in Europa centrale e Italia.",
+                "Sistema globale preciso, molto usato in Europa centrale e "
+                "Italia.",
             ),
             "EPSG:32633": (
                 12.0,
@@ -56,7 +57,8 @@ class SmartSuggest:
                 18.0,
                 84.0,
                 "WGS 84 / UTM zone 33N",
-                "UTM zona 33N, usato in Italia meridionale, Adriatico e Sud (es. Calabria/Puglia).",
+                "UTM zona 33N, usato in Italia meridionale, Adriatico e Sud "
+                "(es. Calabria/Puglia).",
             ),
             "EPSG:3857": (
                 -180,
@@ -64,7 +66,8 @@ class SmartSuggest:
                 180,
                 85,
                 "Web Mercator",
-                "Usato da Google Maps/OSM. Le tue coordinate sembrano pronte per il web.",
+                "Usato da Google Maps/OSM. Le tue coordinate sembrano pronte "
+                "per il web.",
             ),
             "EPSG:4326": (
                 -180,
@@ -72,7 +75,8 @@ class SmartSuggest:
                 180,
                 90,
                 "WGS 84 (Gradi)",
-                "Coordinate geografiche standard. Ideale per GPS e dati globali.",
+                "Coordinate geografiche standard. Ideale per GPS e dati "
+                "globali.",
             ),
         }
 
@@ -138,20 +142,26 @@ class SmartSuggest:
             # Security check for Bandit B310: ensure only http/https schemes
             parsed_url = urllib.parse.urlparse(url)
             if parsed_url.scheme not in ("http", "https"):
-                raise ValueError(f"URL scheme {parsed_url.scheme} is not allowed")
+                raise ValueError(
+                    f"URL scheme {parsed_url.scheme} is not allowed"
+                )
 
             req = urllib.request.Request(
                 url,
                 headers={"User-Agent": USER_AGENT},
             )
-            with urllib.request.urlopen(req, timeout=NETWORK_TIMEOUT_SECONDS) as response:  # nosec B310
+            with urllib.request.urlopen(
+                req, timeout=NETWORK_TIMEOUT_SECONDS
+            ) as response:  # nosec B310
                 data = json.loads(response.read().decode("utf-8"))
                 if not data:
                     return None
                 lon = float(data[0]["lon"])
                 lat = float(data[0]["lat"])
         except Exception as e:
-            QgsMessageLog.logMessage(self.tr("suggest.log_osm", error=e), LOG_TAG, Qgis.Warning)
+            QgsMessageLog.logMessage(
+                self.tr("suggest.log_osm", error=e), LOG_TAG, Qgis.Warning
+            )
             return None
 
         # Ricerca Wikipedia
@@ -167,13 +177,17 @@ class SmartSuggest:
             # Security check for Bandit B310: ensure only http/https schemes
             parsed_wiki_url = urllib.parse.urlparse(wiki_url)
             if parsed_wiki_url.scheme not in ("http", "https"):
-                raise ValueError(f"URL scheme {parsed_wiki_url.scheme} is not allowed")
+                raise ValueError(
+                    f"URL scheme {parsed_wiki_url.scheme} is not allowed"
+                )
 
             wiki_req = urllib.request.Request(
                 wiki_url,
                 headers={"User-Agent": USER_AGENT},
             )
-            with urllib.request.urlopen(wiki_req, timeout=NETWORK_TIMEOUT_SECONDS) as wiki_response:  # nosec B310
+            with urllib.request.urlopen(
+                wiki_req, timeout=NETWORK_TIMEOUT_SECONDS
+            ) as wiki_response:  # nosec B310
                 wiki_data = json.loads(wiki_response.read().decode("utf-8"))
                 pages = wiki_data.get("query", {}).get("pages", {})
                 for page_id, page_info in pages.items():
@@ -181,12 +195,20 @@ class SmartSuggest:
                         wiki_desc = page_info["extract"][:200] + "..."
                         break
         except Exception as e:
-            QgsMessageLog.logMessage(self.tr("suggest.log_wikipedia", error=e), LOG_TAG, Qgis.Warning)
+            QgsMessageLog.logMessage(
+                self.tr("suggest.log_wikipedia", error=e),
+                LOG_TAG,
+                Qgis.Warning,
+            )
 
         point_wgs84 = QgsPointXY(lon, lat)
         src_crs = QgsCoordinateReferenceSystem("EPSG:4326")
 
-        epsg_candidates = [3857, 3003, 3004] + list(range(32601, 32661)) + list(range(32701, 32761))
+        epsg_candidates = (
+            [3857, 3003, 3004]
+            + list(range(32601, 32661))
+            + list(range(32701, 32761))
+        )
         layer_center = layer.extent().center()
 
         valid_epsgs = []
@@ -198,7 +220,9 @@ class SmartSuggest:
                 continue
 
             try:
-                transform = QgsCoordinateTransform(src_crs, dest_crs, QgsProject.instance())
+                transform = QgsCoordinateTransform(
+                    src_crs, dest_crs, QgsProject.instance()
+                )
                 proj_point = transform.transform(point_wgs84)
 
                 # Calcola la distanza tra il punto calcolato da OSM e il centro
@@ -221,34 +245,53 @@ class SmartSuggest:
             valid_epsgs.sort(key=lambda x: x["dist"])
             options = []
             for i, v in enumerate(valid_epsgs[:5]):  # Prendi i migliori 5
-                match_pct = 100 if i == 0 else max(10, int(100 - (v["dist"] / 2000)))
+                match_pct = (
+                    100 if i == 0 else max(10, int(100 - (v["dist"] / 2000)))
+                )
                 dist_km = int(v["dist"] / 1000)
 
                 options.append(
                     {
                         "id": f"EPSG:{v['epsg']}",
-                        "name": f"Match {match_pct}% - EPSG:{v['epsg']} ({v['name']})",
-                        "reason": self.tr("suggest.deep_distance", dist_km=dist_km),
+                        "name": (
+                            f"Match {match_pct}% - EPSG:{v['epsg']} "
+                            f"({v['name']})"),
+                        "reason": self.tr(
+                            "suggest.deep_distance", dist_km=dist_km
+                        ),
                     }
                 )
 
-            wiki_text = self.tr("suggest.wikipedia_info", desc=wiki_desc) if wiki_desc else ""
+            wiki_text = (
+                self.tr("suggest.wikipedia_info", desc=wiki_desc)
+                if wiki_desc
+                else ""
+            )
             alert_msg = ""
 
-            cond1 = "UTM zone 32N" in options[0]["name"] and "Calabria" in query_name.title()
+            cond1 = (
+                "UTM zone 32N" in options[0]["name"]
+                and "Calabria" in query_name.title()
+            )
             cond2 = valid_epsgs[0]["dist"] > 20000
 
             # Controllo se è un file probabilmente disegnato nel fuso sbagliato
             if not is_crs_valid:
                 epsg_val = valid_epsgs[0]["epsg"]
                 dist_km = int(valid_epsgs[0]["dist"] / 1000)
-                alert_msg = self.tr("suggest.deep_alert_no_crs", epsg=epsg_val, dist_km=dist_km)
+                alert_msg = self.tr(
+                    "suggest.deep_alert_no_crs", epsg=epsg_val, dist_km=dist_km
+                )
             elif cond1 or cond2:
                 dist_km = int(valid_epsgs[0]["dist"] / 1000)
-                alert_msg = self.tr("suggest.deep_alert_mismatch", dist_km=dist_km)
+                alert_msg = self.tr(
+                    "suggest.deep_alert_mismatch", dist_km=dist_km
+                )
 
             best_epsg = valid_epsgs[0]["epsg"]
-            reason = self.tr("suggest.deep_reason", query=query_name, epsg=best_epsg)
+            reason = self.tr(
+                "suggest.deep_reason", query=query_name, epsg=best_epsg
+            )
             return {
                 "id": options[0]["id"],
                 "name": options[0]["name"],
@@ -260,7 +303,8 @@ class SmartSuggest:
 
     def suggest_crs(self, layer):
         """
-        Analizza l'extent e restituisce un dict con auth_id, nome e spiegazione.
+        Analizza l'extent e restituisce un dict con auth_id, nome e
+        spiegazione.
         """
         extent = layer.extent()
         center = extent.center()

@@ -35,7 +35,9 @@ class QuickCRSFixer:
         if not os.path.exists(icon_path):
             icon_path = os.path.join(self.plugin_dir, "icon.png")
 
-        self.action = QAction(QIcon(icon_path), "Quick CRS Fixer", self.iface.mainWindow())
+        self.action = QAction(
+            QIcon(icon_path), "Quick CRS Fixer", self.iface.mainWindow()
+        )
         self.action.triggered.connect(self.run)
         self.iface.addVectorToolBarIcon(self.action)
         self.iface.addPluginToVectorMenu("&Quick CRS Fixer", self.action)
@@ -108,7 +110,9 @@ class QuickCRSFixer:
 
         if self.dockwidget:
             self.dockwidget.update_list(all_issues)
-            self.dockwidget.update_resolved_list(self.dockwidget.resolved_issues)
+            self.dockwidget.update_resolved_list(
+                self.dockwidget.resolved_issues
+            )
 
     def run_deep_scan(self, layer_id, manual_query=""):
         try:
@@ -119,7 +123,9 @@ class QuickCRSFixer:
             result = self.suggest.deep_scan(layer, manual_query)
             if result:
                 if layer_id in self.dockwidget.current_issues:
-                    self.dockwidget.current_issues[layer_id]["suggestion"] = result
+                    self.dockwidget.current_issues[layer_id][
+                        "suggestion"
+                    ] = result
                     self.dockwidget.on_selection_changed()
                     self.iface.messageBar().pushMessage(
                         "Deep Scan OSM",
@@ -153,7 +159,9 @@ class QuickCRSFixer:
             if action_type == "fix_all":
                 layers = {}
                 for l_id in QgsProject.instance().mapLayers():
-                    data = self.detector.check_layer(QgsProject.instance().mapLayer(l_id))
+                    data = self.detector.check_layer(
+                        QgsProject.instance().mapLayer(l_id)
+                    )
                     if data:
                         layers[l_id] = data
 
@@ -174,21 +182,33 @@ class QuickCRSFixer:
 
             if action_type == "reproject_resolved":
                 if layer_id in self.dockwidget.resolved_issues:
-                    suggestion = self.dockwidget.resolved_issues[layer_id]["suggestion"]
+                    suggestion = self.dockwidget.resolved_issues[layer_id][
+                        "suggestion"
+                    ]
                 else:
                     return
             else:
                 if layer_id in self.dockwidget.current_issues:
-                    suggestion = self.dockwidget.current_issues[layer_id]["suggestion"]
+                    suggestion = self.dockwidget.current_issues[layer_id][
+                        "suggestion"
+                    ]
                 else:
                     suggestion = self.suggest.suggest_crs(layer)
 
             suggestion_id = suggestion["id"]
             if action_type == "reproject_resolved":
-                if self.dockwidget.resolved_combo.isVisible() and self.dockwidget.resolved_combo.currentData():
-                    suggestion_id = self.dockwidget.resolved_combo.currentData()
+                if (
+                    self.dockwidget.resolved_combo.isVisible()
+                    and self.dockwidget.resolved_combo.currentData()
+                ):
+                    suggestion_id = (
+                        self.dockwidget.resolved_combo.currentData()
+                    )
             else:
-                if self.dockwidget.epsg_combo.isVisible() and self.dockwidget.epsg_combo.currentData():
+                if (
+                    self.dockwidget.epsg_combo.isVisible()
+                    and self.dockwidget.epsg_combo.currentData()
+                ):
                     suggestion_id = self.dockwidget.epsg_combo.currentData()
 
             success = False
@@ -214,9 +234,13 @@ class QuickCRSFixer:
                     return
 
                 if action_type == "assign":
-                    success = self.fixer.assign_crs(layer, suggestion_id, file_path)
+                    success = self.fixer.assign_crs(
+                        layer, suggestion_id, file_path
+                    )
                 elif action_type in ["reproject", "reproject_resolved"]:
-                    success = self.fixer.reproject_layer(layer, suggestion_id, file_path)
+                    success = self.fixer.reproject_layer(
+                        layer, suggestion_id, file_path
+                    )
 
             if success:
                 new_layer_id = success
@@ -238,7 +262,11 @@ class QuickCRSFixer:
 
                 self.iface.messageBar().pushMessage(
                     self.tr("action.success"),
-                    self.tr("action.fix_applied", layer=layer_name, file_name=os.path.basename(file_path)),
+                    self.tr(
+                        "action.fix_applied",
+                        layer=layer_name,
+                        file_name=os.path.basename(file_path),
+                    ),
                     level=Qgis.Success,
                 )
                 self.scan_layers()
