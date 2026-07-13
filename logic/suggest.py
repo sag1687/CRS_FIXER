@@ -238,7 +238,7 @@ class SmartSuggest:
                         "name": dest_crs.description(),
                     }
                 )
-            except Exception:
+            except Exception:  # nosec B112
                 continue
 
         if valid_epsgs:
