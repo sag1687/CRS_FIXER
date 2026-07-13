@@ -49,7 +49,7 @@ class OneClickFixer:
                 QgsMessageLog.logMessage(
                     self.tr("fixer.assign_error", error=e),
                     LOG_TAG,
-                    Qgis.Critical,
+                    Qgis.MessageLevel.Critical,
                 )
             return False
         else:
@@ -92,7 +92,7 @@ class OneClickFixer:
             QgsMessageLog.logMessage(
                 self.tr("fixer.reproject_error", error=e),
                 LOG_TAG,
-                Qgis.Critical,
+                Qgis.MessageLevel.Critical,
             )
         return False
 

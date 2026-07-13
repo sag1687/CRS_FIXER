@@ -160,7 +160,8 @@ class SmartSuggest:
                 lat = float(data[0]["lat"])
         except Exception as e:
             QgsMessageLog.logMessage(
-                self.tr("suggest.log_osm", error=e), LOG_TAG, Qgis.Warning
+                self.tr("suggest.log_osm", error=e), LOG_TAG,
+                Qgis.MessageLevel.Warning
             )
             return None
 
@@ -198,7 +199,7 @@ class SmartSuggest:
             QgsMessageLog.logMessage(
                 self.tr("suggest.log_wikipedia", error=e),
                 LOG_TAG,
-                Qgis.Warning,
+                Qgis.MessageLevel.Warning,
             )
 
         point_wgs84 = QgsPointXY(lon, lat)

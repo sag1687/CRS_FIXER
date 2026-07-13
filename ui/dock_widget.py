@@ -34,7 +34,10 @@ class QuickCRSDockWidget(QgsDockWidget):
     def __init__(self, parent=None):
         super(QuickCRSDockWidget, self).__init__(parent)
         self.setWindowTitle("Quick CRS Fixer")
-        self.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+        self.setAllowedAreas(
+            Qt.DockWidgetArea.LeftDockWidgetArea
+            | Qt.DockWidgetArea.RightDockWidgetArea
+        )
         self.current_issues = {}
         self.language = "it"
         self._issue_count = 0
@@ -189,11 +192,11 @@ class QuickCRSDockWidget(QgsDockWidget):
                 pixmap_p.scaled(
                     300,
                     300,
-                    Qt.KeepAspectRatio,
-                    Qt.SmoothTransformation,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation,
                 )
             )
-        self.logo_p_label.setAlignment(Qt.AlignCenter)
+        self.logo_p_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.info_layout.addWidget(self.logo_p_label)
 
         # Logo Author
@@ -207,29 +210,29 @@ class QuickCRSDockWidget(QgsDockWidget):
                 pixmap.scaled(
                     80,
                     80,
-                    Qt.KeepAspectRatio,
-                    Qt.SmoothTransformation,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation,
                 )
             )
-        self.logo_label.setAlignment(Qt.AlignCenter)
+        self.logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.info_layout.addWidget(self.logo_label)
 
         # Info Text
         self.info_label = QLabel(self._info_html())
         self.info_label.setOpenExternalLinks(True)
-        self.info_label.setAlignment(Qt.AlignCenter)
+        self.info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.info_layout.addWidget(self.info_label)
 
         # Inizio Licenze e Dati Esterni
         hline1 = QFrame()
-        hline1.setFrameShape(QFrame.HLine)
+        hline1.setFrameShape(QFrame.Shape.HLine)
         hline1.setStyleSheet(
             "background-color: #2c3a48; margin-top: 10px; margin-bottom: 5px;"
         )
         self.info_layout.addWidget(hline1)
 
         self.disclaimer_label = QLabel(self.tr("info.disclaimer"))
-        self.disclaimer_label.setAlignment(Qt.AlignCenter)
+        self.disclaimer_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.info_layout.addWidget(self.disclaimer_label)
 
         self.logos_layout = QHBoxLayout()
@@ -245,15 +248,15 @@ class QuickCRSDockWidget(QgsDockWidget):
             f"<img src='{osm_url}' width='50'></a>"
         )
         self.osm_img.setOpenExternalLinks(True)
-        self.osm_img.setAlignment(Qt.AlignCenter)
+        self.osm_img.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.osm_desc = QLabel(self.tr("info.osm"))
-        self.osm_desc.setAlignment(Qt.AlignCenter)
+        self.osm_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.osm_layout.addWidget(self.osm_img)
         self.osm_layout.addWidget(self.osm_desc)
 
         # VLine
         vline = QFrame()
-        vline.setFrameShape(QFrame.VLine)
+        vline.setFrameShape(QFrame.Shape.VLine)
         vline.setStyleSheet("background-color: #2c3a48;")
 
         # Wikipedia
@@ -268,9 +271,9 @@ class QuickCRSDockWidget(QgsDockWidget):
             f"width='50'></a>"
         )
         self.wiki_img.setOpenExternalLinks(True)
-        self.wiki_img.setAlignment(Qt.AlignCenter)
+        self.wiki_img.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.wiki_desc = QLabel(self.tr("info.wiki"))
-        self.wiki_desc.setAlignment(Qt.AlignCenter)
+        self.wiki_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.wiki_layout.addWidget(self.wiki_img)
         self.wiki_layout.addWidget(self.wiki_desc)
 
@@ -280,7 +283,7 @@ class QuickCRSDockWidget(QgsDockWidget):
         self.info_layout.addLayout(self.logos_layout)
 
         hline2 = QFrame()
-        hline2.setFrameShape(QFrame.HLine)
+        hline2.setFrameShape(QFrame.Shape.HLine)
         hline2.setStyleSheet(
             "background-color: #2c3a48; margin-top: 5px; margin-bottom: 10px;"
         )
@@ -527,7 +530,7 @@ class QuickCRSDockWidget(QgsDockWidget):
             count += 1
             parent = QTreeWidgetItem(self.tree)
             parent.setText(0, data["name"])
-            parent.setData(0, Qt.UserRole, layer_id)
+            parent.setData(0, Qt.ItemDataRole.UserRole, layer_id)
             icon_name = (
                 "mIconDelete"
                 if data["severity"] == "error"
@@ -559,7 +562,7 @@ class QuickCRSDockWidget(QgsDockWidget):
         item = items[0]
         if item.parent():
             item = item.parent()
-        layer_id = item.data(0, Qt.UserRole)
+        layer_id = item.data(0, Qt.ItemDataRole.UserRole)
         data = self.current_issues.get(layer_id)
         if data:
             suggestion = data.get("suggestion") or {
@@ -591,7 +594,7 @@ class QuickCRSDockWidget(QgsDockWidget):
             item = items[0]
             if item.parent():
                 item = item.parent()
-            layer_id = item.data(0, Qt.UserRole)
+            layer_id = item.data(0, Qt.ItemDataRole.UserRole)
             self.fixRequested.emit(layer_id, action_type, "")
 
     def emit_deep_scan(self):
@@ -600,7 +603,7 @@ class QuickCRSDockWidget(QgsDockWidget):
             item = items[0]
             if item.parent():
                 item = item.parent()
-            layer_id = item.data(0, Qt.UserRole)
+            layer_id = item.data(0, Qt.ItemDataRole.UserRole)
             self.details_label.setText(self.tr("deep_scan.running"))
             self.deepScanRequested.emit(layer_id, "")
         else:
@@ -612,7 +615,7 @@ class QuickCRSDockWidget(QgsDockWidget):
         for layer_id, data in resolved_data.items():
             item = QTreeWidgetItem(self.tree_resolved)
             item.setText(0, data["name"])
-            item.setData(0, Qt.UserRole, layer_id)
+            item.setData(0, Qt.ItemDataRole.UserRole, layer_id)
             item.setIcon(0, QIcon.fromTheme("mIconSuccess"))
             item.setText(
                 1, data.get("suggestion", {}).get("name", self.tr("valid"))
@@ -626,7 +629,7 @@ class QuickCRSDockWidget(QgsDockWidget):
             self.resolved_details.setText(self.tr("resolved.empty_details"))
             return
         item = items[0]
-        layer_id = item.data(0, Qt.UserRole)
+        layer_id = item.data(0, Qt.ItemDataRole.UserRole)
         data = self.resolved_issues.get(layer_id)
         if data:
             self.resolved_details.setText(
@@ -647,5 +650,5 @@ class QuickCRSDockWidget(QgsDockWidget):
     def emit_reproject_resolved(self):
         items = self.tree_resolved.selectedItems()
         if items:
-            layer_id = items[0].data(0, Qt.UserRole)
+            layer_id = items[0].data(0, Qt.ItemDataRole.UserRole)
             self.fixRequested.emit(layer_id, "reproject_resolved", "")

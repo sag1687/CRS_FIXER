@@ -44,7 +44,9 @@ class QuickCRSFixer:
 
         # Inizializzazione DockWidget
         self.dockwidget = QuickCRSDockWidget(self.iface.mainWindow())
-        self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
+        self.iface.addDockWidget(
+            Qt.DockWidgetArea.RightDockWidgetArea, self.dockwidget
+        )
         self.dockwidget.hide()
 
         # Connessione segnali UI
@@ -91,7 +93,7 @@ class QuickCRSFixer:
                 self.iface.messageBar().pushMessage(
                     "Quick CRS Fixer",
                     self.tr("message.layer_problem", layer=layer.name()),
-                    level=Qgis.Warning,
+                    level=Qgis.MessageLevel.Warning,
                     duration=3,
                 )
 
@@ -130,19 +132,19 @@ class QuickCRSFixer:
                     self.iface.messageBar().pushMessage(
                         "Deep Scan OSM",
                         self.tr("deep_scan.success", name=result["name"]),
-                        level=Qgis.Success,
+                        level=Qgis.MessageLevel.Success,
                         duration=5,
                     )
                     for i in range(self.dockwidget.tree.topLevelItemCount()):
                         item = self.dockwidget.tree.topLevelItem(i)
-                        if item.data(0, Qt.UserRole) == layer_id:
+                        if item.data(0, Qt.ItemDataRole.UserRole) == layer_id:
                             for j in range(item.childCount()):
                                 item.child(j).setText(1, result["name"])
             else:
                 self.iface.messageBar().pushMessage(
                     "Deep Scan OSM",
                     self.tr("deep_scan.no_result"),
-                    level=Qgis.Warning,
+                    level=Qgis.MessageLevel.Warning,
                     duration=5,
                 )
                 self.dockwidget.on_selection_changed()
@@ -150,7 +152,7 @@ class QuickCRSFixer:
             self.iface.messageBar().pushMessage(
                 self.tr("dialog.error"),
                 self.tr("deep_scan.error", error=e),
-                level=Qgis.Critical,
+                level=Qgis.MessageLevel.Critical,
                 duration=5,
             )
 
@@ -169,7 +171,7 @@ class QuickCRSFixer:
                 self.iface.messageBar().pushMessage(
                     self.tr("action.success"),
                     self.tr("action.fixed_count", count=count),
-                    level=Qgis.Success,
+                    level=Qgis.MessageLevel.Success,
                 )
                 self.scan_layers()
                 return
@@ -228,7 +230,7 @@ class QuickCRSFixer:
                     self.iface.messageBar().pushMessage(
                         self.tr("action.cancelled.title"),
                         self.tr("action.cancelled"),
-                        level=Qgis.Info,
+                        level=Qgis.MessageLevel.Info,
                         duration=3,
                     )
                     return
@@ -267,14 +269,14 @@ class QuickCRSFixer:
                         layer=layer_name,
                         file_name=os.path.basename(file_path),
                     ),
-                    level=Qgis.Success,
+                    level=Qgis.MessageLevel.Success,
                 )
                 self.scan_layers()
         except Exception as e:
             self.iface.messageBar().pushMessage(
                 self.tr("dialog.error"),
                 self.tr("action.fix_error", error=e),
-                level=Qgis.Critical,
+                level=Qgis.MessageLevel.Critical,
                 duration=5,
             )
 
